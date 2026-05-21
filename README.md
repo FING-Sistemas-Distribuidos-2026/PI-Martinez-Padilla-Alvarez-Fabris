@@ -23,6 +23,10 @@ El usuario puede subir a la web archivos .glb, los cuales contienen información
 
 ![image](./arquitectura.svg)
 
+## Flujo de mensajes
+
+![image](./msgpassing.svg)
+
 ## Tecnologías elegidas: 
 
 * Orquestador: Kubernetes  
