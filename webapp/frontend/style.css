@@ -1,0 +1,168 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+
+    font-family: Arial, sans-serif;
+
+    background-color: #111827;
+    color: white;
+}
+
+.container {
+    width: 900px;
+    margin: 40px auto;
+}
+
+header {
+    margin-bottom: 30px;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 42px;
+}
+
+header p {
+    color: #9ca3af;
+}
+
+.card {
+    background-color: #1f2937;
+
+    border-radius: 12px;
+
+    padding: 24px;
+
+    margin-bottom: 24px;
+}
+
+h2 {
+    margin-top: 0;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+
+    margin-bottom: 18px;
+}
+
+label {
+    margin-bottom: 8px;
+
+    font-size: 14px;
+
+    color: #d1d5db;
+}
+
+input {
+    padding: 12px;
+
+    border: 1px solid #374151;
+    border-radius: 8px;
+
+    background-color: #111827;
+    color: white;
+
+    font-size: 14px;
+}
+
+input:focus {
+    outline: none;
+    border-color: #2563eb;
+}
+
+button {
+    margin-top: 10px;
+
+    padding: 14px;
+
+    border: none;
+    border-radius: 8px;
+
+    background-color: #2563eb;
+
+    color: white;
+
+    font-size: 15px;
+    font-weight: bold;
+
+    cursor: pointer;
+
+    transition: 0.2s;
+}
+
+button:hover {
+    background-color: #1d4ed8;
+}
+
+.jobs-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.job {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    padding: 16px;
+
+    margin-top: 12px;
+
+    border-radius: 8px;
+
+    background-color: #111827;
+
+    border: 1px solid #374151;
+}
+
+.job-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.job-name {
+    font-weight: bold;
+}
+
+.job-details {
+    margin-top: 4px;
+
+    font-size: 13px;
+
+    color: #9ca3af;
+}
+
+.status {
+    padding: 6px 12px;
+
+    border-radius: 999px;
+
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.status.queued {
+    background-color: #78350f;
+    color: #fcd34d;
+}
+
+.status.processing {
+    background-color: #1e3a8a;
+    color: #93c5fd;
+}
+
+.status.done {
+    background-color: #14532d;
+    color: #86efac;
+}

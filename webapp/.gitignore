@@ -1,0 +1,7 @@
+
+__pycache__/
+backend/uploads/
+*.pyc
+*.pyo
+*.pyd
+*.db

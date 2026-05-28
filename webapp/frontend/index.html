@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Raytracer</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <header>
+            <h1>Raytracer</h1>
+            <p>Distributed Rendering System</p>
+        </header>
+
+        <section class="card">
+
+            <h2>Nuevo Render</h2>
+
+            <form id="uploadForm">
+
+                <div class="form-group">
+
+                    <label for="sceneFile">
+                        Archivo .glb
+                    </label>
+
+                    <input
+                        type="file"
+                        id="sceneFile"
+                        accept=".glb"
+                        required
+                    >
+
+                </div>
+
+                <div class="form-group">
+
+                    <label for="resolution">
+                        Resolución Vertical
+                    </label>
+
+                    <input
+                        type="number"
+                        id="resolution"
+                        placeholder="1080"
+                        required
+                    >
+
+                </div>
+
+                <div class="form-group">
+
+                    <label for="samples">
+                        Samples
+                    </label>
+
+                    <input
+                        type="number"
+                        id="samples"
+                        placeholder="100"
+                        required
+                    >
+
+                </div>
+
+                <div class="form-group">
+
+                    <label for="jobName">
+                        Nombre (opcional)
+                    </label>
+
+                    <input
+                        type="text"
+                        id="jobName"
+                        placeholder="Mi render"
+                    >
+
+                </div>
+
+                <button type="submit">
+                    Enviar Render
+                </button>
+
+            </form>
+
+        </section>
+
+        <section class="card">
+
+            <div class="jobs-header">
+                <h2>Trabajos</h2>
+            </div>
+
+            <div id="jobsList"></div>
+
+        </section>
+
+    </div>
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>
