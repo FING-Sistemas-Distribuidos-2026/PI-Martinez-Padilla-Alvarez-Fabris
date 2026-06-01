@@ -1,0 +1,3 @@
+[submodule "worker/renderer"]
+	path = worker/renderer
+	url = https://github.com/gonza2323/raytracer.git

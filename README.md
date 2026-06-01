@@ -2,6 +2,20 @@
 
 # Trabajo Práctico Integrador 
 
+## Instalación
+
+Clonar el repositorio junto con sus submódulos, recursivamente, usando:
+
+```bash
+git clone --recurse-submodules git@github.com:FING-Sistemas-Distribuidos-2026/PI-Martinez-Padilla-Alvarez-Fabris.git
+```
+
+Si ya se había clonado el repo anteriormente sin sus submódulos, hacer pull, y luego ejecutar:
+
+```bash
+git submodule update --init --recursive
+```
+
 # Hito 1: Diseño y Arquitectura
 
 ## Proyecto: Raytracer

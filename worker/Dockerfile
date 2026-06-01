@@ -1,0 +1,1 @@
+# Este dockerfile debería compilar el render y cargar el código de python en la misma imagen
