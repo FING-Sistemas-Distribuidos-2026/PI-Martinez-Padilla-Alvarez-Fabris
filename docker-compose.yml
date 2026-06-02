@@ -46,5 +46,21 @@ services:
     volumes:
       - ./webapp/backend/uploads:/webapp/backend/uploads
 
+  worker:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    environment:
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/%2F
+      RABBITMQ_QUEUE: render_jobs
+      RENDERER_PATH: /app/renderer/renderer
+      SCENES_FOLDER: /tmp/scenes
+      OUTPUT_FOLDER: /app/renders
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./worker/renders:/app/renders
+
 volumes:
   postgres_data:
