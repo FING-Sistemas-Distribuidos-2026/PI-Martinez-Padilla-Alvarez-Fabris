@@ -4,6 +4,8 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
+from minio import Minio
+from minio.error import S3Error
 
 import pika
 import psycopg
@@ -25,8 +27,20 @@ DEFAULT_DATABASE_URL = os.getenv(
     "postgresql://postgres:postgres@localhost:5432/raytracer",
 )
 
+MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "minio:9000")
+MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY", "minioadmin")
+MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY", "minioadmin")
+MINIO_BUCKET = os.getenv("MINIO_BUCKET", "renders")
+
 app = Flask(__name__, static_folder=str(FRONTEND_DIR), static_url_path="")
 CORS(app, resources={r"/api/*": {"origins": "*"}})
+
+minio_client = Minio(
+    MINIO_ENDPOINT,
+    access_key=MINIO_ACCESS_KEY,
+    secret_key=MINIO_SECRET_KEY,
+    secure=False
+)
 
 
 def utc_now() -> str:
@@ -241,7 +255,26 @@ def create_render_job() -> tuple[dict, int]:
     filename = secure_filename(scene_file.filename)
     saved_filename = f"{job_id}_{filename}"
     file_path = UPLOAD_DIR / saved_filename
-    scene_file.save(file_path)
+
+    # scene_file.save(file_path)
+
+    object_key = f"scenes/{saved_filename}"
+    try:
+        scene_file.stream.seek(0)
+
+        minio_client.put_object(
+            MINIO_BUCKET,
+            object_key,
+            scene_file.stream,
+            length=scene_file.content_length or -1,
+            part_size=10 * 1024 * 1024,
+            content_type=scene_file.content_type
+        )
+
+    except S3Error as error:
+        return jsonify({
+            "error": f"Error al subir archivo a MinIO: {error}"
+        }), 500
 
     job = {
         "id": job_id,
