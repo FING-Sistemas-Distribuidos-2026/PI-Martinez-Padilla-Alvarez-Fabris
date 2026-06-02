@@ -9,16 +9,13 @@ from minio.error import S3Error
 
 import pika
 import psycopg
-from flask import Flask, request, send_from_directory
+from flask import Flask, request, send_from_directory, redirect
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 
 
 BASE_DIR = Path(__file__).resolve().parent
 FRONTEND_DIR = BASE_DIR.parent / "frontend"
-UPLOAD_DIR = BASE_DIR / "uploads"
-
-UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 ALLOWED_EXTENSIONS = {"glb"}
 DEFAULT_QUEUE_NAME = os.getenv("RABBITMQ_QUEUE", "render_jobs")
@@ -49,6 +46,11 @@ def utc_now() -> str:
 
 def is_allowed_file(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+def ensure_bucket() -> None:
+    if not minio_client.bucket_exists(MINIO_BUCKET):
+        minio_client.make_bucket(MINIO_BUCKET)
 
 
 def parse_positive_int(value: str | None, field_name: str) -> int:
@@ -111,8 +113,15 @@ def init_db() -> None:
                     status TEXT NOT NULL,
                     created_at TIMESTAMPTZ NOT NULL,
                     file_path TEXT NOT NULL,
-                    error_message TEXT
+                    error_message TEXT,
+                    result_object_key TEXT
                 )
+                """
+            )
+            cursor.execute(
+                """
+                ALTER TABLE render_jobs
+                ADD COLUMN IF NOT EXISTS result_object_key TEXT
                 """
             )
         connection.commit()
@@ -129,6 +138,7 @@ def row_to_job(row: tuple) -> dict:
         "createdAt": row[6].isoformat() if hasattr(row[6], "isoformat") else str(row[6]),
         "filePath": row[7],
         "errorMessage": row[8],
+        "resultObjectKey": row[9],
     }
 
 
@@ -146,8 +156,9 @@ def insert_job(job: dict) -> None:
                     status,
                     created_at,
                     file_path,
-                    error_message
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    error_message,
+                    result_object_key
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """,
                 (
                     job["id"],
@@ -159,24 +170,57 @@ def insert_job(job: dict) -> None:
                     job["createdAt"],
                     job["filePath"],
                     job.get("errorMessage"),
+                    job.get("resultObjectKey"),
                 ),
             )
         connection.commit()
 
 
-def update_job_status(job_id: str, status: str, error_message: str | None = None) -> None:
+def update_job_record(
+    job_id: str,
+    status: str,
+    error_message: str | None = None,
+    result_object_key: str | None = None,
+) -> None:
     with get_db_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
                 """
                 UPDATE render_jobs
                 SET status = %s,
-                    error_message = %s
+                    error_message = %s,
+                    result_object_key = %s
                 WHERE id = %s
                 """,
-                (status, error_message, job_id),
+                (status, error_message, result_object_key, job_id),
             )
         connection.commit()
+
+
+def fetch_job(job_id: str) -> dict | None:
+    with get_db_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT
+                    id,
+                    name,
+                    original_filename,
+                    resolution,
+                    samples,
+                    status,
+                    created_at,
+                    file_path,
+                    error_message,
+                    result_object_key
+                FROM render_jobs
+                WHERE id = %s
+                """,
+                (job_id,),
+            )
+            row = cursor.fetchone()
+
+    return row_to_job(row) if row else None
 
 
 def fetch_jobs() -> list[dict]:
@@ -193,7 +237,8 @@ def fetch_jobs() -> list[dict]:
                     status,
                     created_at,
                     file_path,
-                    error_message
+                    error_message,
+                    result_object_key
                 FROM render_jobs
                 ORDER BY created_at DESC
                 """
@@ -254,12 +299,10 @@ def create_render_job() -> tuple[dict, int]:
     job_id = uuid4().hex
     filename = secure_filename(scene_file.filename)
     saved_filename = f"{job_id}_{filename}"
-    file_path = UPLOAD_DIR / saved_filename
-
-    # scene_file.save(file_path)
-
     object_key = f"scenes/{saved_filename}"
+
     try:
+        ensure_bucket()
         scene_file.stream.seek(0)
 
         minio_client.put_object(
@@ -272,9 +315,7 @@ def create_render_job() -> tuple[dict, int]:
         )
 
     except S3Error as error:
-        return jsonify({
-            "error": f"Error al subir archivo a MinIO: {error}"
-        }), 500
+        return {"error": f"Error al subir archivo a MinIO: {error}"}, 500
 
     job = {
         "id": job_id,
@@ -284,28 +325,59 @@ def create_render_job() -> tuple[dict, int]:
         "samples": samples,
         "status": "pending",
         "createdAt": utc_now(),
-        "filePath": str(file_path),
+        "filePath": object_key,
         "errorMessage": None,
+        "resultObjectKey": None,
     }
 
     try:
         insert_job(job)
     except Exception as error:
-        if file_path.exists():
-            file_path.unlink()
         return {"error": f"No se pudo persistir el trabajo en PostgreSQL: {error}"}, 500
 
     try:
         publish_job(job)
         job["status"] = "queued"
-        update_job_status(job_id, "queued")
+        update_job_record(job_id, "queued")
     except Exception as error:
         job["status"] = "failed"
         job["errorMessage"] = f"No se pudo publicar el trabajo en RabbitMQ: {error}"
-        update_job_status(job_id, "failed", job["errorMessage"])
+        update_job_record(job_id, "failed", job["errorMessage"])
         return {"error": job["errorMessage"]}, 502
 
     return {"message": "Trabajo encolado", "job": job}, 202
+
+
+@app.patch("/api/jobs/<job_id>")
+def update_job(job_id: str) -> tuple[dict, int]:
+    payload = request.get_json(silent=True) or {}
+    status = payload.get("status")
+    if not status:
+        return {"error": "status es requerido"}, 400
+
+    error_message = payload.get("errorMessage")
+    result_object_key = payload.get("resultObjectKey")
+
+    update_job_record(job_id, status, error_message, result_object_key)
+    job = fetch_job(job_id)
+    if not job:
+        return {"error": "Trabajo no encontrado"}, 404
+
+    return {"job": job}, 200
+
+
+@app.get("/api/jobs/<job_id>/download")
+def download_job(job_id: str) -> tuple[dict, int] | object:
+    job = fetch_job(job_id)
+    if not job:
+        return {"error": "Trabajo no encontrado"}, 404
+
+    result_object_key = job.get("resultObjectKey")
+    if not result_object_key:
+        return {"error": "El trabajo todavía no está listo"}, 409
+
+    url = minio_client.presigned_get_object(MINIO_BUCKET, result_object_key)
+    return redirect(url)
 
 
 @app.route("/<path:filename>")

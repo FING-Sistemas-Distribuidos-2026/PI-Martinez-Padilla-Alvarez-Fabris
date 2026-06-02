@@ -50,6 +50,26 @@ services:
     volumes:
       - ./webapp/backend/uploads:/webapp/backend/uploads
 
+  worker:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    environment:
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/%2F
+      RABBITMQ_QUEUE: render_jobs
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET: renders
+      API_BASE_URL: http://web:8000
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      web:
+        condition: service_started
+      minio:
+        condition: service_started
+
   minio:
     image: minio/minio
     container_name: minio

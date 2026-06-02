@@ -24,12 +24,16 @@ function renderJobs() {
     jobs.forEach(job => {
         const div = document.createElement("div")
         div.className = "job"
+        const downloadLink = job.status === "completed"
+            ? `<a class="download-link" href="${apiBaseUrl}/api/jobs/${job.id}/download">Descargar</a>`
+            : ""
         div.innerHTML = `
             <div class="job-info">
                 <span class="job-name">${job.name}</span>
                 <span class="job-details">${job.resolution}p • ${job.samples} samples</span>
             </div>
             <span class="status ${job.status}">${formatJobStatus(job.status)}</span>
+            ${downloadLink}
         `
         jobsList.appendChild(div)
     })
