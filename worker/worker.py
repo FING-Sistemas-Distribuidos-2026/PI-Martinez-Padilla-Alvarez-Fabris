@@ -1,3 +1,4 @@
+import time
 import json
 import os
 import subprocess
@@ -13,7 +14,7 @@ RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/%2F"
 RABBITMQ_QUEUE = os.getenv("RABBITMQ_QUEUE", "render_jobs")
 API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
 
-MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "minio:9000")
+MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "localhost:9000")
 MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY", "minioadmin")
 MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY", "minioadmin")
 MINIO_BUCKET = os.getenv("MINIO_BUCKET", "renders")
@@ -75,10 +76,12 @@ def render_job(job: dict) -> None:
 
 
 def handle_message(channel, method, properties, body) -> None:
+    print(f"Tarea recibida")
     job_id = None
     try:
         job = json.loads(body)
         job_id = job.get("id")
+        print(f"Job {job_id} recibido")
         render_job(job)
     except Exception as error:
         if job_id:
@@ -89,11 +92,39 @@ def handle_message(channel, method, properties, body) -> None:
 
 
 def main() -> None:
-    connection = pika.BlockingConnection(pika.URLParameters(RABBITMQ_URL))
+    max_retries = 30
+    delay_seconds = 2
+
+    connection = None
+
+    for attempt in range(1, max_retries + 1):
+        try:
+            print(f"[RabbitMQ] connection attempt {attempt}/{max_retries}...")
+            connection = pika.BlockingConnection(
+                pika.URLParameters(RABBITMQ_URL)
+            )
+            print("[RabbitMQ] connected successfully")
+            break
+
+        except Exception as error:
+            print(f"[RabbitMQ] connection failed: {error}")
+
+            if attempt == max_retries:
+                raise RuntimeError(
+                    "Could not connect to RabbitMQ after multiple retries"
+                ) from error
+
+            time.sleep(delay_seconds)
+
     channel = connection.channel()
     channel.queue_declare(queue=RABBITMQ_QUEUE, durable=True)
     channel.basic_qos(prefetch_count=1)
-    channel.basic_consume(queue=RABBITMQ_QUEUE, on_message_callback=handle_message)
+    channel.basic_consume(
+        queue=RABBITMQ_QUEUE,
+        on_message_callback=handle_message
+    )
+
+    print("[Worker] consuming messages...")
     channel.start_consuming()
 
 

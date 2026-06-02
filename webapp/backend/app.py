@@ -6,6 +6,8 @@ from pathlib import Path
 from uuid import uuid4
 from minio import Minio
 from minio.error import S3Error
+from flask import Response, stream_with_context
+from minio.error import S3Error
 
 import pika
 import psycopg
@@ -21,10 +23,10 @@ ALLOWED_EXTENSIONS = {"glb"}
 DEFAULT_QUEUE_NAME = os.getenv("RABBITMQ_QUEUE", "render_jobs")
 DEFAULT_DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://postgres:postgres@localhost:5432/raytracer",
+    "postgresql://postgres:postgres@localhost:5433/raytracer",
 )
 
-MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "minio:9000")
+MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "localhost:9000")
 MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY", "minioadmin")
 MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY", "minioadmin")
 MINIO_BUCKET = os.getenv("MINIO_BUCKET", "renders")
@@ -366,8 +368,12 @@ def update_job(job_id: str) -> tuple[dict, int]:
     return {"job": job}, 200
 
 
+from flask import Response, stream_with_context
+from minio.error import S3Error
+
+
 @app.get("/api/jobs/<job_id>/download")
-def download_job(job_id: str) -> tuple[dict, int] | object:
+def download_job(job_id: str):
     job = fetch_job(job_id)
     if not job:
         return {"error": "Trabajo no encontrado"}, 404
@@ -376,8 +382,30 @@ def download_job(job_id: str) -> tuple[dict, int] | object:
     if not result_object_key:
         return {"error": "El trabajo todavía no está listo"}, 409
 
-    url = minio_client.presigned_get_object(MINIO_BUCKET, result_object_key)
-    return redirect(url)
+    try:
+        stat = minio_client.stat_object(MINIO_BUCKET, result_object_key)
+        response = minio_client.get_object(MINIO_BUCKET, result_object_key)
+
+        def generate():
+            try:
+                for chunk in response.stream(32 * 1024):
+                    yield chunk
+            finally:
+                response.close()
+                response.release_conn()
+
+        return Response(
+            stream_with_context(generate()),
+            status=200,
+            content_type=stat.content_type or "application/octet-stream",
+            headers={
+                "Content-Length": str(stat.size),
+                "Content-Disposition": f'inline; filename="{result_object_key.split("/")[-1]}"',
+            },
+        )
+
+    except S3Error as error:
+        return {"error": f"Error al descargar desde MinIO: {error}"}, 500
 
 
 @app.route("/<path:filename>")
