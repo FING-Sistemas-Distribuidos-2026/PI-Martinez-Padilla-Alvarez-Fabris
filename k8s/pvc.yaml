@@ -1,0 +1,29 @@
+---
+# PostgreSQL Persistent Volume Claim
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: raytracer
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: cinder
+  resources:
+    requests:
+      storage: 10Gi
+
+---
+# MinIO Persistent Volume Claim
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: minio-pvc
+  namespace: raytracer
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: cinder
+  resources:
+    requests:
+      storage: 50Gi
