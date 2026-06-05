@@ -20,16 +20,13 @@ BASE_DIR = Path(__file__).resolve().parent
 FRONTEND_DIR = BASE_DIR.parent / "frontend"
 
 ALLOWED_EXTENSIONS = {"glb"}
-DEFAULT_QUEUE_NAME = os.getenv("RABBITMQ_QUEUE", "render_jobs")
-DEFAULT_DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql://postgres:postgres@localhost:5433/raytracer",
-)
+DEFAULT_QUEUE_NAME = os.getenv("RABBITMQ_QUEUE")
+DEFAULT_DATABASE_URL = os.getenv("DATABASE_URL")
 
-MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "localhost:9000")
-MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY", "minioadmin")
-MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY", "minioadmin")
-MINIO_BUCKET = os.getenv("MINIO_BUCKET", "renders")
+MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT")
+MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY")
+MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY")
+MINIO_BUCKET = os.getenv("MINIO_BUCKET")
 
 app = Flask(__name__, static_folder=str(FRONTEND_DIR), static_url_path="")
 CORS(app, resources={r"/api/*": {"origins": "*"}})
@@ -71,7 +68,7 @@ def parse_positive_int(value: str | None, field_name: str) -> int:
 
 
 def rabbitmq_parameters() -> pika.URLParameters:
-    rabbitmq_url = os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/%2F")
+    rabbitmq_url = os.getenv("RABBITMQ_URL")
     return pika.URLParameters(rabbitmq_url)
 
 
@@ -415,5 +412,5 @@ def static_files(filename: str):
 
 if __name__ == "__main__":
     init_db()
-    port = int(os.getenv("PORT", "8000"))
+    port = int(os.getenv("PORT")
     app.run(host="0.0.0.0", port=port, debug=True)

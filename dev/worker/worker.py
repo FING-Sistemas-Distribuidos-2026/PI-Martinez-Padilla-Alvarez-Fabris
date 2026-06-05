@@ -10,14 +10,14 @@ import requests
 from minio import Minio
 
 
-RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/%2F")
-RABBITMQ_QUEUE = os.getenv("RABBITMQ_QUEUE", "render_jobs")
-API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
+RABBITMQ_URL = os.getenv("RABBITMQ_URL")
+RABBITMQ_QUEUE = os.getenv("RABBITMQ_QUEUE")
+API_BASE_URL = os.getenv("API_BASE_URL")
 
-MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "localhost:9000")
-MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY", "minioadmin")
-MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY", "minioadmin")
-MINIO_BUCKET = os.getenv("MINIO_BUCKET", "renders")
+MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT")
+MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY")
+MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY")
+MINIO_BUCKET = os.getenv("MINIO_BUCKET")
 
 minio_client = Minio(
     MINIO_ENDPOINT,

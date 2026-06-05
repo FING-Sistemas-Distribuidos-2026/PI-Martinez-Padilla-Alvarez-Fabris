@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: raytracer-config
+  namespace: raytracer
+
+data:
+  PORT: "8000"
+
+  RABBITMQ_QUEUE: "render_jobs"
+
+  MINIO_BUCKET: "renders"
+  MINIO_ENDPOINT: "minio:9000"
+
+  API_BASE_URL: "http://webapp:8000"
+
+  DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/raytracer"
+
+  RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672/%2F"
