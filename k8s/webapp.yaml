@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webapp
+  namespace: raytracer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: webapp
+
+  template:
+    metadata:
+      labels:
+        app: webapp
+
+    spec:
+      containers:
+        - name: webapp
+          image: adriano229/dev-web:latest
+          imagePullPolicy: Always
+
+          ports:
+            - containerPort: 8000
+
+          envFrom:
+            - configMapRef:
+                name: raytracer-config
+
+            - secretRef:
+                name: raytracer-secret
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webapp
+  namespace: raytracer
+
+spec:
+  selector:
+    app: webapp
+
+  ports:
+    - port: 8000
+      targetPort: 8000
+
+  type: ClusterIP

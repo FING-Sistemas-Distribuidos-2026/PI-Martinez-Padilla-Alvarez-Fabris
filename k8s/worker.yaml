@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  namespace: raytracer
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: worker
+
+  template:
+    metadata:
+      labels:
+        app: worker
+
+    spec:
+      containers:
+        - name: worker
+          image: adriano229/dev-worker:latest
+          imagePullPolicy: Always
+
+          envFrom:
+            - configMapRef:
+                name: raytracer-config
+
+            - secretRef:
+                name: raytracer-secret
