@@ -1,0 +1,15 @@
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: raytracer-pool
+  namespace: metallb-system
+spec:
+  addresses:
+    - 10.66.1.11-10.66.1.20
+
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: raytracer-l2
+  namespace: metallb-system
