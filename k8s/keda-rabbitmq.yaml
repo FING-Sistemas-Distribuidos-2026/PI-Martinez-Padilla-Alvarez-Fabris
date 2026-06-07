@@ -1,0 +1,20 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: worker-scaler
+  namespace: raytracer
+
+spec:
+  scaleTargetRef:
+    name: worker
+
+  minReplicaCount: 1
+  maxReplicaCount: 6
+
+  triggers:
+    - type: rabbitmq
+      metadata:
+        host: amqp://guest:guest@rabbitmq.raytracer.svc.cluster.local:5672/%2F
+        queueName: render_jobs
+        mode: QueueLength
+        value: "1" # 1 worker nuevo por cada 1 render
