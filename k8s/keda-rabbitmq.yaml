@@ -1,4 +1,17 @@
 apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: rabbitmq-auth
+  namespace: raytracer
+
+spec:
+  configMapTargetRef:
+    - parameter: host
+      name: raytracer-config
+      key: RABBITMQ_URL
+
+---
+apiVersion: keda.sh/v1alpha1
 kind: ScaledObject
 metadata:
   name: worker-scaler
@@ -8,13 +21,15 @@ spec:
   scaleTargetRef:
     name: worker
 
-  minReplicaCount: 1
+  minReplicaCount: 0
   maxReplicaCount: 6
+  cooldownPeriod: 5
 
   triggers:
     - type: rabbitmq
       metadata:
-        host: amqp://guest:guest@rabbitmq.raytracer.svc.cluster.local:5672/%2F
         queueName: render_jobs
         mode: QueueLength
-        value: "1" # 1 worker nuevo por cada 1 render
+        value: "1"
+      authenticationRef:
+        name: rabbitmq-auth

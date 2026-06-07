@@ -16,4 +16,4 @@ data:
 
   DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/raytracer"
 
-  RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672/%2F"
+  RABBITMQ_URL: "amqp://guest:guest@rabbitmq.raytracer.svc.cluster.local:5672/%2F"

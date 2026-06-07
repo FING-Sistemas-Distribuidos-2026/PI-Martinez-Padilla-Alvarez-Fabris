@@ -11,3 +11,4 @@ resources:
   - minio.yaml
   - webapp.yaml
   - worker.yaml
+  - keda-rabbitmq.yaml
