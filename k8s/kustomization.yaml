@@ -6,9 +6,11 @@ resources:
   - configmap.yaml
   - secret.yaml
 
+  - cert-issuer.yaml
   - postgres.yaml
   - rabbitmq.yaml
   - minio.yaml
+  - ingress.yaml
   - webapp.yaml
   - worker.yaml
   - keda-rabbitmq.yaml
