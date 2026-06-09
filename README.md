@@ -45,11 +45,11 @@ El usuario puede subir a la web archivos .glb, los cuales contienen información
 
 ## Diagrama de arquitectura  
 
-![image](./arquitectura.svg)
+![image](./images/arch.svg)
 
 ## Flujo de mensajes
 
-![image](./msgpassing.svg)
+![image](./images/comms.svg)
 
 ## Tecnologías elegidas: 
 
