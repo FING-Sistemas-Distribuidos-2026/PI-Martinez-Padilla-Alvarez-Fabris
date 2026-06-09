@@ -23,7 +23,7 @@ kubectl create secret generic raytracer-secret \
   --from-env-file=.env \
   --namespace=raytracer \
   --dry-run=client \
-  -o yaml | kubectl apply -f -
+  -o yaml > k8s/secret.yaml
 ```
 
 # Hito 1: Diseño y Arquitectura
