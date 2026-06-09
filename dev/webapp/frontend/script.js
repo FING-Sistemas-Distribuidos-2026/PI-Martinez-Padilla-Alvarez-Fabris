@@ -1,10 +1,35 @@
 const form = document.getElementById("uploadForm")
 const jobsList = document.getElementById("jobsList")
+const logPanel = document.getElementById("logPanel")
+const logEntries = document.getElementById("logEntries")
+const clearLogsBtn = document.getElementById("clearLogs")
 
 const apiBaseUrl = window.location.protocol === "file:" || window.location.origin === "null"
     ? "http://localhost:8000"
     : ""
 const jobs = []
+
+// Logs 
+
+function log(level, message) {
+    const levels = { info: "INFO", warn: "WARN", error: "ERROR" }
+    const now = new Date().toLocaleTimeString("es-AR", { hour12: false })
+ 
+    const entry = document.createElement("div")
+    entry.className = `log-entry log-${level}`
+    entry.innerHTML = `<span class="log-time">${now}</span><span class="log-level">${levels[level]}</span><span class="log-msg">${message}</span>`
+    logEntries.appendChild(entry)
+ 
+    // Scroll al ultimo log
+    logEntries.scrollTop = logEntries.scrollHeight
+}
+ 
+clearLogsBtn.addEventListener("click", () => {
+    logEntries.innerHTML = ""
+    log("info", "Logs limpiados")
+})
+
+
 
 function formatJobStatus(status) {
     return status || "queued"
@@ -49,10 +74,17 @@ async function loadJobs() {
         }
 
         const data = await response.json()
+        const prev = jobs.map(j => j.status)
         jobs.splice(0, jobs.length, ...(data.jobs || []))
+        jobs.forEach((job, i) => {
+            if (prev[i] !== undefined && prev[i] !== job.status) {
+                log("info", `Job "${job.name}" cambió de estado: ${prev[i]} → ${job.status}`)
+            }
+        })
+ 
         renderJobs()
     } catch (error) {
-        console.error(error)
+        log("error", `Error al cargar trabajos: ${error.message}`)
         renderJobs()
     }
 }
@@ -66,6 +98,13 @@ form.addEventListener("submit", async event => {
     if (!file) {
         return
     }
+
+    const resolution = document.getElementById("resolution").value
+    const samples = document.getElementById("samples").value
+    const jobName = document.getElementById("jobName").value || file.name
+ 
+    log("info", `Enviando "${jobName}" — ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB, ${resolution}p, ${samples} samples)`)
+
 
     const submitButton = form.querySelector("button[type='submit']")
     submitButton.disabled = true
@@ -89,10 +128,11 @@ form.addEventListener("submit", async event => {
             throw new Error(payload.error || "No se pudo encolar el trabajo")
         }
 
+        log("info", `Job encolado con id ${payload.job.id}`)
         await loadJobs()
         form.reset()
     } catch (error) {
-        console.error(error)
+        log("error", `Error al enviar render: ${error.message}`)
         alert(error.message)
     } finally {
         submitButton.disabled = false
@@ -100,6 +140,7 @@ form.addEventListener("submit", async event => {
     }
 })
 
+log("info", "Aplicación iniciada")
 loadJobs()
 
 const REFRESH_INTERVAL = 5000
