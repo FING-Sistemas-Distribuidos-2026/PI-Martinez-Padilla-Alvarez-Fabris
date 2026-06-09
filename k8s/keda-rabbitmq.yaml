@@ -23,7 +23,7 @@ spec:
 
   minReplicaCount: 0
   maxReplicaCount: 6
-  cooldownPeriod: 5
+  cooldownPeriod: 600
 
   triggers:
     - type: rabbitmq
@@ -31,5 +31,6 @@ spec:
         queueName: render_jobs
         mode: QueueLength
         value: "1"
+        excludeUnacknowledged: "false"
       authenticationRef:
         name: rabbitmq-auth

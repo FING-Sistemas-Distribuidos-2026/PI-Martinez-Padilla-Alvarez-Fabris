@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: webapp
-          image: adriano229/dev-web:latest
+          image: gonza2323/renderer-webapp:latest
           imagePullPolicy: Always
 
           ports:

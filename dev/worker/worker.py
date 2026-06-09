@@ -3,6 +3,7 @@ import json
 import os
 import subprocess
 import tempfile
+import threading
 from pathlib import Path
 
 import pika
@@ -75,20 +76,33 @@ def render_job(job: dict) -> None:
         update_job(job_id, "completed", result_object_key=result_object_key)
 
 
-def handle_message(channel, method, properties, body) -> None:
-    print(f"Tarea recibida")
+def process_message(connection, channel, delivery_tag, body) -> None:
     job_id = None
     try:
         job = json.loads(body)
         job_id = job.get("id")
         print(f"Job {job_id} recibido")
         render_job(job)
+        connection.add_callback_threadsafe(
+            lambda: channel.basic_ack(delivery_tag=delivery_tag)
+        )
     except Exception as error:
         if job_id:
             update_job(job_id, "failed", error_message=str(error))
         print(f"Error procesando trabajo: {error}")
-    finally:
-        channel.basic_ack(delivery_tag=method.delivery_tag)
+        connection.add_callback_threadsafe(
+            lambda: channel.basic_nack(delivery_tag=delivery_tag, requeue=True)
+        )
+
+
+def handle_message(channel, method, properties, body) -> None:
+    print(f"Tarea recibida")
+    thread = threading.Thread(
+        target=process_message,
+        args=(channel.connection, channel, method.delivery_tag, body)
+    )
+    print(f"Iniciando hilo de renderizado")
+    thread.start()
 
 
 def main() -> None:
@@ -121,7 +135,7 @@ def main() -> None:
     channel.basic_qos(prefetch_count=1)
     channel.basic_consume(
         queue=RABBITMQ_QUEUE,
-        on_message_callback=handle_message
+        on_message_callback=handle_message,
     )
 
     print("[Worker] consuming messages...")
@@ -130,4 +144,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

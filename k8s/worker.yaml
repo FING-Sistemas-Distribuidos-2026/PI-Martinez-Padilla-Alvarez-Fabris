@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: worker
-          image: adriano229/dev-worker:latest
+          image: gonza2323/renderer-worker:latest
           imagePullPolicy: Always
 
           envFrom:
