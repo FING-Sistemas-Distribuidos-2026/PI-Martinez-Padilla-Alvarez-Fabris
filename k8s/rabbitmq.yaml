@@ -30,7 +30,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: raytracer-secret
-                  key: RABBITMQ_DEFAULT_USER
+                  key: RABBITMQ_DEFAULT_PASS
 ---
 apiVersion: v1
 kind: Service

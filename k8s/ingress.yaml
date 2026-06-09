@@ -11,6 +11,8 @@ spec:
   tls:
     - hosts:
         - renders.gpadilla.com
+        - rabbitmq.gpadilla.com
+        - minio.gpadilla.com
       secretName: webapp-tls
   rules:
     - host: renders.gpadilla.com
@@ -23,3 +25,23 @@ spec:
                 name: webapp
                 port:
                   number: 8000
+    - host: rabbitmq.gpadilla.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: rabbitmq
+                port:
+                  number: 15672
+    - host: minio.gpadilla.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: minio
+                port:
+                  number: 9001
