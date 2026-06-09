@@ -16,6 +16,16 @@ Si ya se había clonado el repo anteriormente sin sus submódulos, hacer pull, y
 git submodule update --init --recursive
 ```
 
+### Generar secret
+
+```bash
+kubectl create secret generic raytracer-secret \
+  --from-env-file=.env \
+  --namespace=raytracer \
+  --dry-run=client \
+  -o yaml | kubectl apply -f -
+```
+
 # Hito 1: Diseño y Arquitectura
 
 ## Proyecto: Raytracer

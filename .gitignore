@@ -1,2 +1,4 @@
 *.glb
 .idea
+.env
+k8s/secret.yaml
