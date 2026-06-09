@@ -41,7 +41,9 @@ function renderJobs() {
 
 async function loadJobs() {
     try {
-        const response = await fetch(`${apiBaseUrl}/api/jobs`)
+        const response = await fetch(
+            `${apiBaseUrl}/api/jobs?t=${Date.now()}`,
+            { cache: "no-store" })       
         if (!response.ok) {
             throw new Error("No se pudieron cargar los trabajos")
         }
@@ -87,8 +89,7 @@ form.addEventListener("submit", async event => {
             throw new Error(payload.error || "No se pudo encolar el trabajo")
         }
 
-        jobs.unshift(payload.job)
-        renderJobs()
+        await loadJobs()
         form.reset()
     } catch (error) {
         console.error(error)
@@ -100,3 +101,7 @@ form.addEventListener("submit", async event => {
 })
 
 loadJobs()
+
+const REFRESH_INTERVAL = 5000
+
+setInterval(loadJobs, REFRESH_INTERVAL)
